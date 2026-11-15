@@ -47,9 +47,9 @@ main:is(:fullscreen,.expanded){display:flex;flex-direction:column;justify-conten
 main.expanded{position:fixed;inset:0;z-index:10}
 main:is(:fullscreen,.expanded)>*{width:min(100%, calc((100dvh - 110px) * 2));margin-inline:auto}
 main:is(:fullscreen,.expanded) .stage{aspect-ratio:2;height:auto;flex-shrink:0}
-#touch-controls{display:none;position:absolute;inset:0;pointer-events:none}
+#touch-controls{display:none;position:absolute;inset:0;pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 #touch-stick,.touch-actions{position:absolute;bottom:12px}
-#touch-stick{left:14px;width:clamp(64px,19vh,104px);aspect-ratio:1;display:grid;place-items:center;border:1px solid #f5c3e299;border-radius:50%;background:#291f3ccc;touch-action:none;pointer-events:auto}
+#touch-stick{left:14px;width:clamp(86px,25dvh,132px);aspect-ratio:1;display:grid;place-items:center;border:1px solid #f5c3e299;border-radius:50%;background:#291f3ccc;touch-action:none;pointer-events:auto}
 #touch-stick span{width:42%;aspect-ratio:1;border-radius:50%;background:#e7a7cb;box-shadow:0 2px 9px #170f24aa;translate:var(--stick-x,0px) var(--stick-y,0px);pointer-events:none}
 .touch-actions{right:14px;display:flex;align-items:flex-end;gap:8px}
 .touch-actions button{border:1px solid #f5c3e299;border-radius:12px;background:#291f3cee;color:var(--ink);min-width:42px;padding:10px;touch-action:none;pointer-events:auto}

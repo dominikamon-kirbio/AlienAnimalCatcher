@@ -1090,6 +1090,7 @@
     stick.style.setProperty("--stick-y",touch.y*radius+"px");
   }
   stick.addEventListener("pointerdown",event=>{
+    event.preventDefault();
     if(stickPointer!==null) return;
     stickPointer=event.pointerId;
     stick.setPointerCapture(stickPointer);
@@ -1097,6 +1098,7 @@
   });
   stick.addEventListener("pointermove",moveStick);
   touchAction.addEventListener("pointerdown",event=>{
+    event.preventDefault();
     if(actionPointer!==null) return;
     actionPointer=event.pointerId;
     touchAction.setPointerCapture(actionPointer);
@@ -1108,6 +1110,7 @@
     stick.addEventListener(type,event=>{if(event.pointerId===stickPointer) centerStick();});
     touchAction.addEventListener(type,event=>{if(event.pointerId===actionPointer) releaseAction();});
   }
+  get("touch-controls").addEventListener("contextmenu",event=>event.preventDefault());
   get("touch-pause").addEventListener("click",togglePause);
   if(android) window.alienAndroid={
     controller(x,y,buttons,trigger) {
