@@ -15,6 +15,7 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.window.OnBackInvokedDispatcher;
 
 import androidx.webkit.WebViewAssetLoader;
 
@@ -60,6 +61,10 @@ public final class GameActivity extends Activity implements InputManager.InputDe
         });
         inputManager = getSystemService(InputManager.class);
         inputManager.registerInputDeviceListener(this, null);
+        if (Build.VERSION.SDK_INT >= 33) {
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                    OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::navigateBack);
+        }
         game.loadUrl("https://appassets.androidplatform.net/assets/index.html");
         immersive();
     }
@@ -108,6 +113,10 @@ public final class GameActivity extends Activity implements InputManager.InputDe
 
     @Override
     public void onBackPressed() {
+        navigateBack();
+    }
+
+    private void navigateBack() {
         game.evaluateJavascript("window.alienAndroid?.back()", result -> {
             if (!"true".equals(result)) finish();
         });
@@ -131,9 +140,9 @@ public final class GameActivity extends Activity implements InputManager.InputDe
     }
 
     @Override
-    public boolean onGenericMotionEvent(MotionEvent event) {
+    public boolean dispatchGenericMotionEvent(MotionEvent event) {
         if (!event.isFromSource(InputDevice.SOURCE_JOYSTICK) || event.getAction() != MotionEvent.ACTION_MOVE)
-            return super.onGenericMotionEvent(event);
+            return super.dispatchGenericMotionEvent(event);
         takeController(event.getDeviceId());
         x = event.getAxisValue(MotionEvent.AXIS_X);
         y = event.getAxisValue(MotionEvent.AXIS_Y);
