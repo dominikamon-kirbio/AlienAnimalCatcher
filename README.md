@@ -20,6 +20,8 @@ Rette **47 Tiere** in sechs Nachtparcours. Der Ausgang öffnet sich, sobald alle
 
 Die ersten Parcours führen an Patrouillendrohnen vorbei. Später unterbrechen Störsender deinen Fangstrahl, bis ihr violettes Feld erlischt. Geschütztürme kündigen Schüsse mit einer Ziellinie an. Im letzten Abschnitt musst du allen drei Gegnertypen ausweichen.
 
+Durch den Fangstrahl wandern Lichtringe nach oben. Bei jeder Rettung steigt ein funkelndes Herz aus dem UFO. Alle drei Bosse haben eigene Explosionseffekte, von der Feuerwelle des Sternenjägers bis zu Vexas violetter Implosion.
+
 ## Im Browser starten
 
 Lade das Projekt über **Code → Download ZIP** herunter, entpacke es und öffne `index.html` in einem aktuellen Browser. Es gibt keine Installation und keinen lokalen Server.

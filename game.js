@@ -4,6 +4,13 @@
   const canvas = get("game");
   const ctx = canvas.getContext("2d");
   const W = canvas.width, H = canvas.height, ground = 515;
+  const motionPreference = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+  const explosionPalettes = [
+    ["#fff0b7","#ff9c5c","#f16a8c"],
+    ["#fcffce","#cbef75","#f398af"],
+    ["#ffddff","#c98ffa","#7964ff"],
+    ["#fff1ce","#fca9d0","#f0779f"]
+  ];
   const courses = [
     {name:"Dächer bei Nacht", sky:["#29234d","#5b557e"], width:2420,
       towers:[[440,100,148],[960,140,235],[1570,90,180],[2020,115,222]],
@@ -57,6 +64,7 @@
   let beam = false, noticeTime = 0, mute = false, audio, padId = null, padA = false, padStart = false;
   let boss = null, bossIndex = 0, shots = [], hazards = [], fireDelay = 0;
   let effects = [], destruction = null;
+  let beamPower = 0;
   let patrols = [], solids = [], courseTime = 0, jammed = false, maxHull = 3;
   let selection = 0, selectFrom = "title", padB = false, padY = false, padDirection = 0;
   let padView = false;
@@ -107,6 +115,18 @@
     ctx.beginPath();
     ctx.arc(x,y,r,0,Math.PI*2);
     ctx.stroke();
+  }
+  function streak(x,y,endX,endY,color,width) {
+    ctx.strokeStyle=color;
+    ctx.lineWidth=width;
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+    ctx.lineTo(endX,endY);
+    ctx.stroke();
+  }
+  function sparkle(x,y,size,color) {
+    path([[x,y-size],[x+size*.24,y-size*.24],[x+size*.71,y],[x+size*.24,y+size*.24],
+      [x,y+size],[x-size*.24,y+size*.24],[x-size*.71,y],[x-size*.24,y-size*.24]],color);
   }
   function path(points,color) {
     ctx.fillStyle = color;
@@ -179,9 +199,19 @@
       path([[x,y],[x-3,y-7],[x+1,y-5],[x+4,y-9],[x+4,y]],i%4?"#555366":"#b4a363");
     }
   }
-  function ufo(x,y,scale,tilt,t) {
+  function ufo(x,y,scale,tilt,t,thrust=0) {
     ctx.save();
     ctx.translate(x,y); ctx.rotate(tilt); ctx.scale(scale,scale);
+    if(Math.abs(thrust)>.15) {
+      const direction=Math.sign(thrust);
+      const length=28+Math.abs(thrust)*47+Math.sin(t*26)*7;
+      const tail=ctx.createLinearGradient(-direction*44,0,-direction*(44+length),0);
+      tail.addColorStop(0,"#fff1c9");
+      tail.addColorStop(.3,"#f7a4ccbb");
+      tail.addColorStop(1,"#b675ef00");
+      path([[-direction*43,5],[-direction*43,19],[-direction*(44+length),18]],tail);
+      path([[-direction*47,8],[-direction*47,15],[-direction*(45+length*.5),14]],"#fff0c9c9");
+    }
     oval(0,18,56,15,"#5d365e");
     oval(0,23,32,8,"#b964a0");
     ctx.save();
@@ -193,6 +223,7 @@
     oval(25,-33,8,8,"#f7f4d6bb"); oval(34,-22,3,3,"#f7f4d6bb");
     ctx.restore();
     rect(-3,-57,6,10,"#ae5c99",2);
+    oval(0,-58,8+Math.sin(t*3)*2,8+Math.sin(t*3)*2,"#ffafd146");
     oval(0,-58,5,5,"#f6adcc");
     rect(-64,-3,128,25,"#b7639c",13);
     rect(-64,-7,128,22,"#e28ab9",11);
@@ -207,9 +238,10 @@
   function critter(x,y,kind,scale,t,lift=0) {
     ctx.save();
     ctx.translate(x,y+Math.sin(t*5+x)*Math.min(3,lift));
+    if(lift>0&&!motionPreference?.matches) ctx.rotate(Math.sin(t*8)*Math.min(.18,lift*.01));
     ctx.scale(scale,scale);
     const fur=["#eee0df","#dfad84","#e9a8b8"][kind], head=["#51445f","#a86f50","#d2869f"][kind];
-    for(let i=0;i<4;i++) rect(-15+i*8,-5,4,9,head,2);
+    for(let i=0;i<4;i++) rect(-15+i*8,-5+Math.sin(t*(lift>0?12:3)+i*2)*Math.min(2,lift+1),4,9,head,2);
     oval(-4,-8,19,12,fur);
     if(kind===0) for(let i=0;i<7;i++) oval(-18+i*5,-16+Math.sin(i*2)*2,6,6,fur);
     if(kind===1) {oval(-12,-9,6,5,head);rect(13,-25,3,7,fur,1);rect(21,-23,3,6,fur,1);}
@@ -219,18 +251,33 @@
     if(kind===2) oval(22,-11,4,3,"#efb2be");
     ctx.restore();
   }
-  function ray(x,y,end,width,t) {
+  function ray(x,y,end,width,t,power=1) {
     if(end<=y) return;
+    ctx.save();
+    ctx.globalAlpha=power;
     const fade=ctx.createLinearGradient(0,y,0,end);
-    fade.addColorStop(0,"#ffee8cbb"); fade.addColorStop(1,"#f7dc5438");
+    fade.addColorStop(0,"#fff3bada"); fade.addColorStop(.36,"#ffe07678"); fade.addColorStop(1,"#f7dc5449");
     path([[x-12,y],[x+12,y],[x+width,end],[x-width,end]],fade);
     path([[x-5,y],[x+5,y],[x+width*.57,end],[x-width*.57,end]],"#ffed6e32");
     oval(x,end,width,Math.max(4,width*.11),"#ffe28253");
-    for(let i=0;i<13;i++) {
+    for(let i=0;i<4;i++) {
+      const p=wrap(i/4-t*.72,1), radius=10+(width-10)*p;
+      ctx.globalAlpha=power*(.14+.35*Math.sin(p*Math.PI));
+      ctx.strokeStyle="#fff1b3"; ctx.lineWidth=1.4;
+      ctx.beginPath();
+      ctx.ellipse(x,y+p*(end-y),radius,Math.max(1.5,radius*.095),0,0,Math.PI*2);
+      ctx.stroke();
+    }
+    ctx.globalAlpha=power;
+    for(let i=0;i<16;i++) {
       const p=wrap(noise(i+201)-t*(.24+noise(i+307)*.38),1);
       const radius=11+(width-11)*p;
-      oval(x+(noise(i+590)-.5)*1.8*radius,y+p*(end-y),2+noise(i+195)*3,2+noise(i+195)*3,"#ffea9c8d");
+      const px=x+Math.sin(t*3+i*2.4)*radius*.87, py=y+p*(end-y);
+      if(i%4===0) sparkle(px,py,2+noise(i+195)*3,"#fff1b7c9");
+      else oval(px,py,1+noise(i+195)*2,2+noise(i+195)*3,"#ffea9c8d");
     }
+    oval(x,y,15,4,"#fff3c4bb");
+    ctx.restore();
   }
   function drawTitle(t) {
     background(0,courses[0]);
@@ -247,7 +294,7 @@
     boss={hp:bosses[index].hp,x:970,y:265,phase:1,time:0,motion:0,nextAttack:1.5,attack:0,flash:0,warning:0};
     fireDelay=0; shots=[]; hazards=[]; particles=[];
     effects=[]; destruction=null;
-    camera=0; hull=maxHull=5; invulnerable=0; beam=false;
+    camera=0; hull=maxHull=5; invulnerable=0; beam=false; beamPower=0;
     ship={x:175,y:285,vx:0,vy:0};
     enterPlay(); updateHud();
     announce(bosses[index].intro,4);
@@ -286,8 +333,11 @@
       }
     }
     for(const shot of shots) {
-      rect(shot.x-17,shot.y-4,23,8,"#7fe6d95c",4);
-      rect(shot.x-9,shot.y-2,15,4,"#baffeb",2);
+      const tail=ctx.createLinearGradient(shot.x-39,0,shot.x+8,0);
+      tail.addColorStop(0,"#7fe6d900");
+      tail.addColorStop(1,"#7fe6d9c9");
+      rect(shot.x-39,shot.y-5,47,10,tail,4);
+      rect(shot.x-12,shot.y-2,19,4,"#d4fff4",2);
     }
     if(destruction?.target!=="boss") {
       ctx.save();
@@ -296,7 +346,7 @@
       ctx.restore();
     }
     if(destruction?.target!=="ship"&&(invulnerable<=0||Math.floor(t*14)%2===0))
-      ufo(ship.x,ship.y,.56,clamp(ship.vx/1000,-.22,.22),t);
+      ufo(ship.x,ship.y,.56,clamp(ship.vx/1000,-.22,.22),t,ship.vx/325);
   }
   function drawEnemy(t) {
     if(bossIndex===0) {
@@ -390,12 +440,14 @@
     if(firing&&fireDelay<=0) {
       fireDelay=.19;
       shots.push({x:ship.x+31,y:ship.y+1});
+      effects.push({kind:"spark",x:ship.x+35,y:ship.y+1,age:0,duration:.14,color:"#c9fff0",size:12});
       beep(640,.08,"sine",385);
     }
     shots=shots.filter(shot=>{
       shot.x+=dt*790;
       if(Math.abs(shot.x-boss.x)<(bossIndex===0?57:48)&&Math.abs(shot.y-boss.y)<(bossIndex===0?32:45)) {
         boss.hp=Math.max(0,boss.hp-1); boss.flash=.08;
+        effects.push({kind:"spark",x:shot.x,y:shot.y,age:0,duration:.28,color:"#ffc6e4",size:22});
         updateHud();
         return false;
       }
@@ -410,6 +462,7 @@
     const phase=health>2/3?1:health>1/3?2:3;
     if(phase!==boss.phase) {
       boss.phase=phase;
+      effects.push({kind:"ripple",x:boss.x,y:boss.y,age:0,duration:.75,color:explosionPalettes[bossIndex][1]});
       announce("Phase "+phase+" · "+bosses[bossIndex].phaseHint,1.8);
       updateHud();
     }
@@ -467,7 +520,7 @@
     rect(exit-20,ground-62,40,53,"#222037",7);
     text(saved===animals.length?"✓":"•",exit,ground-26,"#fff2c1","bold 24px Segoe UI");
     text("AUSGANG",exit,ground-82,"#fff2c1","bold 12px Segoe UI");
-    if(beam) ray(ship.x-camera,ship.y+13,ground-1,beamWidth(),t);
+    if(beamPower>.025) ray(ship.x-camera,ship.y+13,ground-1,beamWidth(),t,beamPower);
     for(const animal of animals) {
       if(animal.saved) continue;
       const x=animal.x-camera, y=ground-5-animal.lift;
@@ -484,7 +537,7 @@
     }
     ctx.globalAlpha=1;
     if(destruction?.target!=="ship"&&(invulnerable<=0||Math.floor(t*14)%2===0))
-      ufo(ship.x-camera,ship.y,.56,clamp(ship.vx/1000,-.22,.22),t);
+      ufo(ship.x-camera,ship.y,.56,clamp(ship.vx/1000,-.22,.22),t,ship.vx/305);
     if(jammed) text("STRAHL GESTÖRT",ship.x-camera,ship.y-43,"#f3b9ff","bold 12px Segoe UI");
   }
 
@@ -587,11 +640,14 @@
   }
 
   function destroy(target,x,y,duration,finish) {
-    state="ending"; beam=false; jammed=false;
+    state="ending"; beam=false; jammed=false; beamPower=0;
     hideTouch();
     announce("");
-    destruction={target,remaining:duration,finish};
-    effects.push({kind:"explosion",x,y,age:0,duration,scale:target==="boss"?1.65:1});
+    destruction={target,remaining:duration,duration,finish};
+    effects.push({
+      kind:"explosion",x,y,age:0,duration,scale:target==="boss"?1.65:1,
+      style:target==="boss"?bossIndex:3
+    });
     beep(135,.6,"triangle",33);
   }
   function drawEffects() {
@@ -599,41 +655,94 @@
       const progress=effect.age/effect.duration;
       ctx.save();
       ctx.translate(effect.x-camera,effect.y);
-      if(effect.kind==="heart") {
-        const size=Math.min(1.18,progress*8)*22;
-        ctx.translate(Math.sin(progress*4)*10,-62*progress);
-        ctx.scale(size,size);
-        ctx.globalAlpha=Math.min(1,(1-progress)*3);
-        ctx.fillStyle="#fb87bc";
-        ctx.beginPath();
-        ctx.moveTo(0,.65);
-        ctx.bezierCurveTo(-.32,.38,-.94,-.02,-.74,-.43);
-        ctx.bezierCurveTo(-.59,-.73,-.22,-.74,0,-.44);
-        ctx.bezierCurveTo(.22,-.74,.59,-.73,.74,-.43);
-        ctx.bezierCurveTo(.94,-.02,.32,.38,0,.65);
-        ctx.fill();
-        oval(-.39,-.34,.12,.075,"#ffd4e5");
+      if(effect.kind==="heart") drawHeart(progress);
+      else if(effect.kind==="explosion") drawExplosion(effect,progress);
+      else if(effect.kind==="spark") {
+        ctx.globalAlpha=1-progress;
+        sparkle(0,0,effect.size*(.5+progress),effect.color);
       } else {
-        ctx.scale(effect.scale,effect.scale);
-        const spread=1-(1-progress)**2;
-        ctx.globalAlpha=(1-progress)*.64;
-        ctx.strokeStyle="#ffd487";
-        ctx.lineWidth=3*(1-progress)+1;
-        ctx.beginPath(); ctx.arc(0,0,12+spread*101,0,Math.PI*2); ctx.stroke();
-        for(let i=0;i<28;i++) {
-          const angle=noise(i+90)*Math.PI*2, distance=(25+noise(i+195)*105)*spread;
-          const x=Math.cos(angle)*distance, y=Math.sin(angle)*distance;
-          ctx.globalAlpha=(1-progress)**1.4;
-          oval(x,y+progress*progress*34,2+noise(i+311)*4,2+noise(i+311)*4,
-            ["#ffe6a6","#ff9c79","#e975b7"][i%3]);
-        }
-        if(progress<.35) {
-          ctx.globalAlpha=1-progress/.35;
-          oval(0,0,17+spread*57,17+spread*57,"#f6a86a");
-          oval(0,0,9+spread*33,9+spread*33,"#fff2c1");
-        }
+        ctx.globalAlpha=(1-progress)*.65;
+        outline(0,0,25+94*progress,effect.color,3-progress*2);
       }
       ctx.restore();
+    }
+  }
+  function drawHeart(progress) {
+    const reduced=motionPreference?.matches;
+    const rise=(1-(1-progress)**2)*(reduced?26:70);
+    const entrance=clamp(progress/.23,0,1);
+    const size=(1-(1-entrance)**3+.21*Math.sin(entrance*Math.PI))*28;
+    const alpha=Math.min(1,(1-progress)*4);
+    if(!reduced) {
+      ctx.globalAlpha=(1-progress)**2*.58;
+      outline(0,3,8+progress*82,"#ffe7a4",1.8);
+      for(let i=0;i<8;i++) {
+        const angle=i*Math.PI/4+progress*.8;
+        const distance=14+progress*(35+noise(i+871)*36);
+        sparkle(Math.cos(angle)*distance,Math.sin(angle)*distance-rise*.46,3+noise(i+24)*3,"#ffe7b7");
+      }
+    }
+    ctx.globalAlpha=alpha;
+    ctx.translate(reduced?0:Math.sin(progress*5)*9,-rise);
+    ctx.scale(size,size);
+    ctx.fillStyle="#fb87bc";
+    ctx.beginPath();
+    ctx.moveTo(0,.65);
+    ctx.bezierCurveTo(-.32,.38,-.94,-.02,-.74,-.43);
+    ctx.bezierCurveTo(-.59,-.73,-.22,-.74,0,-.44);
+    ctx.bezierCurveTo(.22,-.74,.59,-.73,.74,-.43);
+    ctx.bezierCurveTo(.94,-.02,.32,.38,0,.65);
+    ctx.fill();
+    oval(-.39,-.34,.14,.083,"#ffd4e5");
+  }
+  function drawExplosion(effect,clock) {
+    const {style}=effect, palette=explosionPalettes[style], reduced=motionPreference?.matches;
+    ctx.scale(effect.scale,effect.scale);
+    const delay=style===2&&!reduced ? .18 : 0;
+    if(clock<delay) {
+      const collapse=1-clock/delay;
+      outline(0,0,8+collapse*63,palette[1],2+2*(1-collapse));
+      for(let i=0;i<8;i++) {
+        const angle=i*Math.PI/4+clock*7;
+        sparkle(Math.cos(angle)*collapse*74,Math.sin(angle)*collapse*74,4,palette[0]);
+      }
+      return;
+    }
+    const progress=(clock-delay)/(1-delay);
+    const spread=1-(1-progress)**2;
+    for(let i=0;i<(reduced?1:3);i++) {
+      const local=progress-i*.13;
+      if(local<0) continue;
+      ctx.globalAlpha=(1-local)**2*(reduced?.46:.75);
+      outline(0,0,9+(1-(1-local)**2)*(110-i*15),palette[i],4-local*3);
+    }
+    for(let i=0;i<(reduced?10:38);i++) {
+      const angle=noise(i+90)*Math.PI*2, distance=(25+noise(i+195)*121)*spread;
+      const dx=Math.cos(angle), dy=Math.sin(angle);
+      const x=dx*distance*(style===0?1.24:1),y=dy*distance+progress*progress*34;
+      const tail=9+noise(i+72)*18, size=2+noise(i+311)*4;
+      ctx.globalAlpha=(1-progress)**1.5;
+      if(style===1&&i%4===0&&!reduced) {
+        sparkle(x,y,size*1.45,palette[i%3]);
+      } else if(i%5===0&&!reduced) {
+        ctx.save(); ctx.translate(x,y); ctx.rotate(angle+progress*9);
+        rect(-size/2,-size/2,size*1.7,size*.85,palette[i%3],1);
+        ctx.restore();
+      } else {
+        if(!reduced) streak(x-dx*tail,y-dy*tail,x,y,palette[i%3],size*.55);
+        oval(x,y,size*.65,size*.65,palette[i%3]);
+      }
+    }
+    if(!reduced) {
+      for(let i=0;i<5;i++) {
+        const bloom=progress-i*.046;
+        if(bloom<0||bloom>.44) continue;
+        const x=(noise(i+44)-.5)*62*i/4, y=(noise(i+45)-.5)*58*i/4;
+        const radius=15+bloom*101;
+        ctx.globalAlpha=(1-bloom/.44)*.60;
+        oval(x,y,radius,radius,palette[1]);
+        oval(x,y,radius*.57,radius*.57,palette[0]);
+      }
     }
   }
 
@@ -674,7 +783,7 @@
     level=index; course=courses[index];
     animals=course.animals.map(([x,kind])=>({x,kind,lift:0,saved:false}));
     ship={x:90,y:315,vx:0,vy:0};
-    saved=0; hull=maxHull=3+Math.floor(index/2); camera=0; invulnerable=0; particles=[]; beam=false;
+    saved=0; hull=maxHull=3+Math.floor(index/2); camera=0; invulnerable=0; particles=[]; beam=false; beamPower=0;
     effects=[]; destruction=null;
     patrols=course.enemies.map(([kind,x,y,range],position)=>({
       kind,x,y,range,baseX:x,baseY:y,offset:position*.73,cooldown:.5
@@ -687,7 +796,7 @@
     beep(240,.28,"triangle",520);
   }
   function screen(next,kicker,title,brief,button) {
-    state=next; beam=false;
+    state=next; beam=false; beamPower=0;
     get("kicker").textContent=kicker;
     get("title").replaceChildren(title);
     get("brief").textContent=brief;
@@ -856,6 +965,7 @@
     courseTime+=dt;
     updatePatrols(dt);
     if(state==="ending") return;
+    beamPower+=((beam?1:0)-beamPower)*Math.min(1,dt*(jammed?38:16));
     camera+= (clamp(ship.x-W*.4,0,course.width-W)-camera)*Math.min(1,dt*5);
     for(const a of animals) {
       if(a.saved) continue;
@@ -867,7 +977,7 @@
         if(a.lift>=needed) {
           a.saved=true; saved++; updateHud();
           burst(ship.x,ship.y+14,"#ffe28e"); beep(460,.32,"triangle",970);
-          effects.push({kind:"heart",x:ship.x,y:ship.y-29,age:0,duration:1.05});
+          effects.push({kind:"heart",x:ship.x,y:ship.y-28,age:0,duration:1.25});
           if(saved===animals.length) announce("Alle Tiere an Bord! Zum Ausgang →",4);
         }
       } else a.lift=Math.max(0,a.lift-dt*230);
@@ -899,7 +1009,17 @@
     }
     if(state==="play") {runningTime+=dt; update(dt,pad);}
     if(state==="title"||(state==="select"&&selectFrom==="title")) drawTitle(now/1000);
-    else {drawGame(runningTime); drawEffects();}
+    else {
+      ctx.save();
+      if(state==="ending"&&!motionPreference?.matches) {
+        const force=Math.max(0,destruction.remaining/destruction.duration-.53)*.018;
+        ctx.translate(W/2+Math.sin(runningTime*59)*W*force*.36,H/2+Math.sin(runningTime*47)*H*force*.36);
+        ctx.scale(1+force,1+force);
+        ctx.translate(-W/2,-H/2);
+      }
+      drawGame(runningTime); drawEffects();
+      ctx.restore();
+    }
     requestAnimationFrame(frame);
   }
   window.addEventListener("keydown",event=>{
