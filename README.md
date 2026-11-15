@@ -1,32 +1,51 @@
-# AlienAnimalCatcher
+# 🛸 AlienAnimalCatcher
 
-Flieg mit einem rosa UFO durch fünf Nachtparcours, rette Tiere mit deinem Fangstrahl und stelle dich danach dem Sternenjäger und der Weltraumkuh. In der Levelauswahl sind alle sieben Missionen direkt spielbar.
+Flieg mit einem rosa UFO durch die Nacht, beam Schafe, Kühe und Schweine an Bord und bring sie sicher nach Hause. Das Spiel ist im Stil einer Mosaik-Postkarte gestaltet und läuft offline im Browser und auf Android.
 
-## Im Browser spielen
+[![Android APK](https://github.com/dominikamon-kirbio/AlienAnimalCatcher/actions/workflows/android.yml/badge.svg?branch=main)](https://github.com/dominikamon-kirbio/AlienAnimalCatcher/actions/workflows/android.yml)
 
-Öffne `index.html` in einem aktuellen Browser. Das Spiel läuft auch offline.
+![Das rosa UFO beamt ein Schaf über den beleuchteten Dächern nach oben](docs/spielvorschau.png)
 
-| Aktion | Tastatur | Xbox-Controller |
-| --- | --- | --- |
-| Fliegen | WASD oder Pfeiltasten | Linker Stick oder Steuerkreuz |
-| Tiere beamen | Leertaste | A oder RT |
-| Im Bosskampf schießen | F | X oder RB |
-| Pause | Esc | Menü-Taste |
-| Levelauswahl öffnen | Levelauswahl-Knopf | Y |
-| Vollbild umschalten | V | View |
+[Im Browser starten](#im-browser-starten) · [Android installieren](#android-installieren) · [Steuerung](#steuerung) · [Android lokal bauen](#android-lokal-bauen)
 
-## Android
+## Deine Mission
 
-Unter [Actions → Android APK](https://github.com/dominikamon-kirbio/AlienAnimalCatcher/actions/workflows/android.yml) den letzten erfolgreichen Lauf öffnen und das Artefakt **AlienAnimalCatcher-Android** herunterladen. Das ZIP entpacken und `AlienAnimalCatcher.apk` auf einem Gerät mit Android 8.0 oder neuer installieren. Es handelt sich um eine Debug-APK zur Direktinstallation.
+- **Fünf Nachtparcours mit 37 Tieren.** Von den Dächern bei Nacht bis zur Polarstation musst du Hindernissen ausweichen und alle Tiere einsammeln, bevor sich der Ausgang öffnet.
+- **Zwei Bosse mit je drei Phasen.** Der Sternenjäger feuert immer dichtere Salven. Bei der Weltraumkuh zeigen leuchtende Warnzonen, wo ihre Beamstrahlen einschlagen.
+- **Sieben direkt spielbare Missionen.** Über die Levelauswahl kannst du jeden Parcours und beide Bosse sofort starten und erneut spielen.
 
-Die App läuft offline im Querformat. Links steuerst du das UFO mit dem Touch-Joystick, rechts hältst du **Beamen** oder im Bosskampf **Schießen**. Ein gekoppelter Xbox-Controller kann ebenfalls verwendet werden.
+## Im Browser starten
 
-### Lokal bauen
+Lade das Projekt über **Code → Download ZIP** herunter, entpacke es und öffne `index.html` in einem aktuellen Browser. Es gibt keine Installation und keinen lokalen Server.
 
-Den Ordner `android` in Android Studio öffnen oder mit JDK 17, Android SDK 35 und Build Tools 34.0.0 aus dem Ordner `android` bauen.
+## Android installieren
 
-```sh
+1. Öffne den [letzten erfolgreichen Android-Build für `main`](https://github.com/dominikamon-kirbio/AlienAnimalCatcher/actions/workflows/android.yml?query=branch%3Amain+is%3Asuccess).
+2. Lade unter **Artifacts** das ZIP **AlienAnimalCatcher-Android** herunter. Melde dich bei GitHub an, falls der Download nicht angezeigt wird.
+3. Entpacke das ZIP und installiere `AlienAnimalCatcher.apk` auf einem Gerät mit **Android 8.0 oder neuer** und aktuellem Android System WebView.
+
+Die Debug-APK ist für die Direktinstallation gedacht. Die App startet im Querformat.
+
+## Steuerung
+
+| Aktion | Tastatur | Xbox-Controller | Touch |
+| --- | --- | --- | --- |
+| Fliegen | WASD oder Pfeiltasten | Linker Stick oder Steuerkreuz | Joystick links |
+| Tiere beamen | Leertaste halten | A oder RT halten | **Beamen** halten |
+| Im Bosskampf schießen | F halten | X oder RB halten | **Schießen** halten |
+| Pause | Esc | Menü-Taste | Pause-Knopf |
+| Levelauswahl | Knopf im Menü | Y | Knopf im Menü |
+| Vollbild im Browser | V | View | **Vollbild** |
+
+## Android lokal bauen
+
+Öffne `android/` in Android Studio oder führe den Gradle Wrapper mit **JDK 17**, **Android SDK 35** und **Build Tools 34.0.0** aus.
+
+```bash
+cd android
 ./gradlew :app:assembleDebug :app:lintDebug
 ```
 
-Unter Windows lautet der Befehl `.\gradlew.bat :app:assembleDebug :app:lintDebug`. Die APK liegt anschließend unter `android/app/build/outputs/apk/debug/app-debug.apk`. Der Android-Build übernimmt die drei Spieldateien aus dem Projektstamm.
+Unter Windows verwende `.\gradlew.bat` anstelle von `./gradlew`. Die APK liegt danach unter `android/app/build/outputs/apk/debug/app-debug.apk`.
+
+Browser und Android teilen sich die Canvas-Spielengine in `game.js`. Der Android-Build verpackt HTML, CSS und JavaScript direkt aus dem Projektstamm.
