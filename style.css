@@ -23,9 +23,11 @@ button{font:inherit;cursor:pointer}
 #menu{margin-top:12px}
 #select{background:linear-gradient(90deg,#1b152dfc 20%,#1b152ddd 75%,#1b152d69);justify-content:center}
 #select h2{font-size:clamp(25px,4.5vw,54px);margin:5px 0 12px;letter-spacing:-.04em}
-.levels{display:grid;width:min(100%,660px);grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:10px}
-.levels button{text-align:left;font-size:clamp(11px,1.55vw,16px)}
+.levels{display:grid;width:min(100%,760px);grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:10px;min-height:0;overflow:auto;padding:4px}
+.levels button{text-align:left;font-size:clamp(11px,1.55vw,16px);overflow-wrap:anywhere}
 .levels button span{color:var(--yellow);margin-right:.55em;font-size:.78em;font-weight:bold}
+.levels .boss-option{border-color:#d389af}
+.levels .boss-option span{display:block;color:#f3a9cd}
 .menu-actions{display:flex;gap:7px}
 #boss-hud{position:absolute;top:18px;left:50%;width:34%;text-align:center;transform:translateX(-50%);color:#ffe9f3;font-size:13px;pointer-events:none;text-shadow:0 2px 4px #100e1c}
 #boss-hud progress{display:block;width:100%;height:11px;margin-top:4px;accent-color:#ff87b7}

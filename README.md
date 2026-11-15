@@ -10,9 +10,15 @@ Flieg mit einem rosa UFO durch die Nacht, beam Schafe, Kühe und Schweine an Bor
 
 ## Deine Mission
 
-- **Fünf Nachtparcours mit 37 Tieren.** Von den Dächern bei Nacht bis zur Polarstation musst du Hindernissen ausweichen und alle Tiere einsammeln, bevor sich der Ausgang öffnet.
-- **Zwei Bosse mit je drei Phasen.** Der Sternenjäger feuert immer dichtere Salven. Bei der Weltraumkuh zeigen leuchtende Warnzonen, wo ihre Beamstrahlen einschlagen.
-- **Sieben direkt spielbare Missionen.** Über die Levelauswahl kannst du jeden Parcours und beide Bosse sofort starten und erneut spielen.
+Rette **47 Tiere** in sechs Nachtparcours. Der Ausgang öffnet sich, sobald alle Tiere des Parcours an Bord sind. Aus der Levelauswahl kannst du alle neun Missionen direkt starten.
+
+| Abschnitt | Parcours | Boss |
+| --- | --- | --- |
+| 1 | Dächer bei Nacht · Nebel über dem Moor | **Der Sternenjäger** feuert immer dichtere Salven. |
+| 2 | Mondhafen · Sternenweide | **Die Rache der Kuh** trifft ganze Reihen und Spalten mit Beamstrahlen. |
+| 3 | Polarstation · Riss im Sternenmeer | **Vexa, das Schattenalien** markiert Einschlagszonen und schickt Energiegeschosse vom Arenarand. |
+
+Die ersten Parcours führen an Patrouillendrohnen vorbei. Später unterbrechen Störsender deinen Fangstrahl, bis ihr violettes Feld erlischt. Geschütztürme kündigen Schüsse mit einer Ziellinie an. Im letzten Abschnitt musst du allen drei Gegnertypen ausweichen.
 
 ## Im Browser starten
 

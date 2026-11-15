@@ -7,27 +7,45 @@
   const courses = [
     {name:"Dächer bei Nacht", sky:["#29234d","#5b557e"], width:2420,
       towers:[[440,100,148],[960,140,235],[1570,90,180],[2020,115,222]],
-      animals:[[255,0],[735,1],[1250,0],[1805,2],[2240,0]]},
+      animals:[[255,0],[735,1],[1250,0],[1805,2],[2240,0]], enemies:[]},
     {name:"Nebel über dem Moor", sky:["#172d44","#426b72"], width:2870,
       towers:[[345,90,222],[675,90,288],[1120,150,191],[1510,100,287],[1900,180,232],[2450,120,282]],
       animals:[[210,2],[550,0],[940,2],[1385,1],[1755,0],[2250,2],[2670,1]],
-      gates:[[822,145,100,92],[2185,110,114,139]]},
+      gates:[[822,145,100,92],[2185,110,114,139]],
+      enemies:[["drone",760,160,46],["drone",1750,325,68]],
+      hint:"Patrouillendrohnen kreuzen den Flugweg. Weiche nach oben oder unten aus."},
     {name:"Mondhafen", sky:["#341e49","#80536f"], width:3350,
       towers:[[390,105,280],[730,120,200],[1100,120,295],[1520,155,250],[1950,115,292],[2305,155,229],[2790,120,300]],
       animals:[[250,1],[610,0],[965,2],[1370,0],[1790,1],[2185,0],[2600,2],[3080,1]],
-      gates:[[555,118,105,166],[920,106,103,175],[1330,110,110,156],[2540,117,112,174],[3005,105,114,170]]},
+      gates:[[555,118,105,166],[920,106,103,175],[1330,110,110,156],[2540,117,112,174],[3005,105,114,170]],
+      enemies:[["drone",1460,353,38],["jammer",1790,389,114],["jammer",3080,389,108]],
+      hint:"Violette Felder stören den Fangstrahl. Warte auf eine Lücke im Signal."},
     {name:"Sternenweide", sky:["#182642","#5f637e"], width:3070,
       towers:[[390,100,170],[850,110,245],[1380,145,207],[1920,100,294],[2450,120,234]],
       gates:[[625,123,102,170],[1150,116,105,154],[1680,102,115,164],[2190,135,110,169],[2710,111,100,158]],
-      animals:[[260,1],[690,0],[1100,2],[1310,1],[1620,1],[2115,0],[2370,2],[2825,1]]},
+      animals:[[260,1],[690,0],[1100,2],[1310,1],[1620,1],[2115,0],[2370,2],[2825,1]],
+      enemies:[["drone",780,348,40],["jammer",1310,389,104],["turret",1890,464,330],["drone",2615,311,44]],
+      hint:"Geschütztürme verfolgen dich mit einer Ziellinie. Beweg dich, sobald sie aufblinkt."},
     {name:"Polarstation", sky:["#1c2344","#546d83"], width:3470,
       towers:[[420,120,275],[890,110,228],[1350,130,298],[1915,135,244],[2460,125,288],[2935,110,275]],
       gates:[[645,110,122,171],[1100,115,124,170],[1580,112,132,178],[2180,104,118,161],[2675,116,128,176],[3170,111,120,177]],
-      animals:[[245,0],[685,2],[825,1],[1155,0],[1280,2],[1670,2],[2240,0],[2720,1],[3280,1]]}
+      animals:[[245,0],[685,2],[825,1],[1155,0],[1280,2],[1670,2],[2240,0],[2720,1],[3280,1]],
+      enemies:[["drone",795,340,47],["turret",1070,464,350],["jammer",1670,389,110],["drone",2290,331,50],["turret",2875,464,340]],
+      hint:"Drohnen, Störfelder und Geschütztürme sichern die Polarstation."},
+    {name:"Riss im Sternenmeer", sky:["#201633","#52416f"], width:3650,
+      towers:[[400,110,260],[900,135,224],[1420,110,292],[1920,126,257],[2520,145,290],[3100,113,270]],
+      gates:[[620,113,110,153],[1130,111,126,166],[1640,110,120,159],[2155,110,118,181],[2795,109,112,164],[3330,113,118,175]],
+      animals:[[255,0],[690,1],[820,2],[1190,0],[1330,1],[1700,2],[2230,1],[2410,0],[2860,2],[3430,1]],
+      enemies:[["drone",760,350,45],["jammer",1190,389,120],["turret",1365,464,315],["drone",1820,326,58],["turret",2370,464,320],["jammer",2860,389,123],["drone",3267,337,30]],
+      hint:"Im Sternenriss greifen alle drei Gegnertypen an. Nutze die Pausen zwischen ihren Angriffen."}
   ];
   const bosses = [
-    {name:"Der Sternenjäger", hp:44, sky:["#291939","#684054"]},
-    {name:"Die Rache der Kuh", hp:50, sky:["#1a3044","#426b61"]}
+    {name:"Der Sternenjäger",hp:44,sky:["#291939","#684054"],swing:120,cadence:1.95,
+      intro:"Weiche den Salven aus und schieß zurück.",phaseHint:"Schnellere Salven"},
+    {name:"Die Rache der Kuh",hp:50,sky:["#1a3044","#426b61"],swing:73,cadence:2.34,
+      intro:"Weiche aus, sobald ihre Beamstrahlen aufleuchten.",phaseHint:"Mehr Beamstrahlen"},
+    {name:"Vexa, das Schattenalien",hp:58,sky:["#221432","#4b3678"],swing:105,cadence:2.4,
+      intro:"Weiche aus den violetten Kreisen und halte das Feuer auf Vexas Kern.",phaseHint:"Vexa öffnet weitere Portale"}
   ];
   const keys = new Set();
   const controls = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","KeyW","KeyA","KeyS","KeyD","KeyF","Space","Enter","Escape"]);
@@ -39,6 +57,7 @@
   let beam = false, noticeTime = 0, mute = false, audio, padId = null, padA = false, padStart = false;
   let boss = null, bossIndex = 0, shots = [], hazards = [], fireDelay = 0;
   let effects = [], destruction = null;
+  let patrols = [], solids = [], courseTime = 0, jammed = false, maxHull = 3;
   let selection = 0, selectFrom = "title", padB = false, padY = false, padDirection = 0;
   let padView = false;
   let nativePad = null;
@@ -46,13 +65,19 @@
   const stick = get("touch-stick"), touchAction = get("touch-action");
   const android = navigator.userAgent.includes(" AlienAnimalCatcherAndroid");
   if(android) document.body.classList.add("android-app");
-  const missions = [...courses, ...bosses];
-  const levelButtons = missions.map((mission, index) => {
+  const missions = courses.flatMap((data,index)=>{
+    const courseMission={data,index,kind:"course"};
+    if(index%2===0) return [courseMission];
+    const encounter=Math.floor(index/2);
+    return [courseMission,{data:bosses[encounter],index:encounter,kind:"boss"}];
+  });
+  const levelButtons = missions.map(({data,index,kind}, position) => {
     const button = document.createElement("button");
     const number = document.createElement("span");
-    number.textContent = index < courses.length ? String(index + 1).padStart(2,"0") : "BOSS "+(index-courses.length+1);
-    button.append(number, mission.name);
-    button.addEventListener("click",()=>launch(index));
+    number.textContent = kind==="course" ? String(index + 1).padStart(2,"0") : "BOSS "+(index+1);
+    if(kind==="boss") button.classList.add("boss-option");
+    button.append(number, data.name);
+    button.addEventListener("click",()=>launch(position));
     get("levels").append(button);
     return button;
   });
@@ -75,6 +100,13 @@
     ctx.beginPath();
     ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);
     ctx.fill();
+  }
+  function outline(x,y,r,color,width) {
+    ctx.strokeStyle=color;
+    ctx.lineWidth=width;
+    ctx.beginPath();
+    ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.stroke();
   }
   function path(points,color) {
     ctx.fillStyle = color;
@@ -215,10 +247,10 @@
     boss={hp:bosses[index].hp,x:970,y:265,phase:1,time:0,motion:0,nextAttack:1.5,attack:0,flash:0,warning:0};
     fireDelay=0; shots=[]; hazards=[]; particles=[];
     effects=[]; destruction=null;
-    camera=0; hull=5; invulnerable=0; beam=false;
+    camera=0; hull=maxHull=5; invulnerable=0; beam=false;
     ship={x:175,y:285,vx:0,vy:0};
     enterPlay(); updateHud();
-    announce(index===0?"Weiche den Salven aus und halte F / X zum Schießen.":"Weiche aus, sobald ihre Beamstrahlen aufleuchten.",4);
+    announce(bosses[index].intro,4);
     beep(145,.45,"triangle",450);
   }
   function drawBoss(t) {
@@ -227,12 +259,20 @@
     skyline(20,ground,85,120,503,true);
     for(const hazard of hazards) {
       if(hazard.kind==="orb") {
-        oval(hazard.x,hazard.y,hazard.r+5,hazard.r+5,"#ff507254");
-        oval(hazard.x,hazard.y,hazard.r,hazard.r,"#ff89a4");
+        oval(hazard.x,hazard.y,hazard.r+5,hazard.r+5,bossIndex===2?"#bd69fb66":"#ff507254");
+        oval(hazard.x,hazard.y,hazard.r,hazard.r,bossIndex===2?"#d99dfe":"#ff89a4");
         oval(hazard.x-2,hazard.y-2,3,3,"#ffecd8");
         continue;
       }
       const live=hazard.age>=hazard.warning;
+      if(hazard.kind==="pulse") {
+        const {x,y,size}=hazard;
+        oval(x,y,size,size,live?"#bb69f888":"#c38bf23d");
+        outline(x,y,size,live?"#f9dbff":"#d8a0fa",live?5:2);
+        const radius=live?size*.27:size*(1-.76*hazard.age/hazard.warning);
+        outline(x,y,radius,"#edbeff",2);
+        continue;
+      }
       const color=live?"#bfef8270":"#f5d97034", edge=live?"#efffb4":"#f9dc76";
       const span=hazard.size;
       if(hazard.kind==="row") {
@@ -267,7 +307,7 @@
       rect(-55,14,20,8,boss.warning>0?"#fff2a6":"#e58d9f",4);
       rect(-50,-17,20,8,boss.warning>0?"#fff2a6":"#e58d9f",4);
       for(let i=0;i<3;i++) rect(60,2+i*8,18+Math.sin(t*40+i)*4,4,"#ffab83",3);
-    } else {
+    } else if(bossIndex===1) {
       oval(0,28,71,19,"#58394c");
       oval(0,25,68,12,"#c58e98");
       for(let i=0;i<6;i++) rect(-52+i*19,21,11,6,i===Math.floor(t*8)%6?"#fff4b5":"#f2adba",3);
@@ -282,6 +322,21 @@
       oval(-2,3,32,16,"#df9ca8");
       oval(-14,2,4,3,"#79495e"); oval(10,2,4,3,"#79495e");
       oval(0,31,19,5,glow?"#f3f69c":"#f0ab9d");
+    } else {
+      const glow=boss.warning>0?"#f9bcff":"#9469d1";
+      outline(0,0,64,"#7d55bc80",3);
+      for(let i=0;i<6;i++) {
+        const angle=t*.9+i*Math.PI/3;
+        const x=Math.cos(angle)*67,y=Math.sin(angle)*67;
+        path([[x,y-9],[x+6,y],[x,y+9],[x-6,y]],glow);
+      }
+      path([[-66,19],[-38,-20],[-26,-49],[-11,-32],[28,-40],[64,18],[36,40],[-37,34]],
+        boss.flash>0?"#eab7fc":"#503774");
+      oval(0,-7,29,27,"#a584cc");
+      path([[-24,-12],[-6,-4],[-13,3],[-23,-2]],"#382536");
+      path([[24,-12],[6,-4],[13,3],[23,-2]],"#382536");
+      oval(0,18,16,9,glow);
+      oval(0,16,7,4,"#f6ebff");
     }
   }
   function bossAttack() {
@@ -296,12 +351,27 @@
       }
       if(boss.phase>=2&&boss.attack%2===0)
         hazards.push({kind:"orb",x:boss.x-52,y:boss.y-22,vx:-370,vy:0,r:11});
-    } else {
+    } else if(bossIndex===1) {
       const warning=boss.phase===3?.64:.83;
       if(boss.attack%2===1||boss.phase===3)
         hazards.push({kind:"row",y:ship.y,size:boss.phase===1?19:26,age:0,warning});
       if(boss.attack%2===0||boss.phase===3)
         hazards.push({kind:"column",x:ship.x,size:boss.phase===1?27:35,age:0,warning:warning+.13});
+    } else {
+      const warning=boss.phase===3?.68:.9;
+      hazards.push({kind:"pulse",x:ship.x,y:ship.y,size:boss.phase===3?70:56,age:0,warning});
+      if(boss.phase===3) {
+        const flank=ship.y<290?100:-100;
+        hazards.push({kind:"pulse",x:clamp(ship.x+80,55,810),y:ship.y+flank,size:63,age:0,warning:warning+.24});
+      }
+      if(boss.phase>=2) {
+        const y=boss.attack%2?104:480;
+        const speed=boss.phase===2?175:218;
+        for(let i=0;i<5;i++) {
+          const x=125+i*150+(boss.attack%3)*29;
+          hazards.push({kind:"orb",x,y,vx:(i%2?1:-1)*28,vy:y===104?speed:-speed,r:9});
+        }
+      }
     }
     beep(bossIndex===0?190:260,.18,"triangle",bossIndex===0?115:480);
   }
@@ -309,7 +379,7 @@
     boss.time+=dt;
     boss.motion+=dt*(.82+boss.phase*.24);
     boss.flash=Math.max(0,boss.flash-dt);
-    boss.y=270+Math.sin(boss.motion)*(bossIndex===0?120:73);
+    boss.y=270+Math.sin(boss.motion)*bosses[bossIndex].swing;
     boss.x=975+Math.sin(boss.time*1.32)*45;
     ship.vx+=(dx*325-ship.vx)*Math.min(1,dt*10);
     ship.vy+=(dy*305-ship.vy)*Math.min(1,dt*10);
@@ -333,24 +403,21 @@
     });
     if(!boss.hp) {
       hazards=[]; shots=[];
-      destroy("boss",boss.x,boss.y,1.55,()=>{
-        if(bossIndex===0) screen("second-boss","NEUES SIGNAL","Muh von Backbord","Der Sternenjäger ist erledigt. Jetzt nimmt eine Kuh dein UFO mit Beamstrahlen ins Visier.","Zur Weltraumkuh");
-        else screen("win","MISSION ERFÜLLT","Heimflug frei!","Die Weltraumkuh ist besiegt. Dein UFO kann nach Hause fliegen.","Neue Mission");
-      });
+      destroy("boss",boss.x,boss.y,1.55,completeMission);
       return;
     }
     const health=boss.hp/bosses[bossIndex].hp;
     const phase=health>2/3?1:health>1/3?2:3;
     if(phase!==boss.phase) {
       boss.phase=phase;
-      announce("Phase "+phase+" · "+(bossIndex===0?"Schnellere Salven":"Mehr Beamstrahlen"),1.8);
+      announce("Phase "+phase+" · "+bosses[bossIndex].phaseHint,1.8);
       updateHud();
     }
     boss.nextAttack-=dt;
     boss.warning=Math.max(0,.35-boss.nextAttack);
     if(boss.nextAttack<=0) {
       bossAttack();
-      boss.nextAttack=(bossIndex===0?1.95:2.34)-boss.phase*.28;
+      boss.nextAttack=bosses[bossIndex].cadence-boss.phase*.28;
     }
     hazards=hazards.filter(hazard=>{
       let hit=false;
@@ -361,8 +428,11 @@
       } else {
         hazard.age+=dt;
         if(hazard.age>hazard.warning+.32) return false;
-        hit=hazard.age>=hazard.warning&&(hazard.kind==="row"
-          ?Math.abs(hazard.y-ship.y)<hazard.size+10:Math.abs(hazard.x-ship.x)<hazard.size+19);
+        if(hazard.age>=hazard.warning) {
+          if(hazard.kind==="pulse") hit=Math.hypot(hazard.x-ship.x,hazard.y-ship.y)<hazard.size+12;
+          else if(hazard.kind==="row") hit=Math.abs(hazard.y-ship.y)<hazard.size+10;
+          else hit=Math.abs(hazard.x-ship.x)<hazard.size+19;
+        }
       }
       if(hit&&!invulnerable) {
         hull--; invulnerable=1.15; updateHud();
@@ -390,6 +460,7 @@
       rect(left+5,y+5,w-10,h-10,"#624763",6);
       for(let i=12;i<w-10;i+=20) rect(left+i,y+h-13,10,6,"#efb279",2);
     }
+    drawPatrols(t);
     const exit = course.width-76-camera;
     rect(exit-30,ground-72,60,72,"#272338",12);
     rect(exit-25,ground-67,50,62,saved===animals.length?"#a3e1cd":"#b9789c",9);
@@ -414,10 +485,109 @@
     ctx.globalAlpha=1;
     if(destruction?.target!=="ship"&&(invulnerable<=0||Math.floor(t*14)%2===0))
       ufo(ship.x-camera,ship.y,.56,clamp(ship.vx/1000,-.22,.22),t);
+    if(jammed) text("STRAHL GESTÖRT",ship.x-camera,ship.y-43,"#f3b9ff","bold 12px Segoe UI");
+  }
+
+  function drawPatrols(t) {
+    for(const enemy of patrols) {
+      const {kind,y,range}=enemy;
+      const x=enemy.x-camera;
+      if(x < -range || x > W+range) continue;
+      if(kind==="drone") {
+        oval(x,y+10,25,7,"#432d49");
+        path([[x-30,y-2],[x-13,y-16],[x+13,y-16],[x+30,y-2],[x+17,y+9],[x-17,y+9]],"#98495f");
+        rect(x-15,y-6,30,7,"#36243e",3);
+        oval(x+Math.sin(t*5)*8,y-3,5,4,"#ffd086");
+      } else if(kind==="jammer") {
+        if(enemy.warning||enemy.active) {
+          const field=enemy.active?"#b25bee34":"#ca80eb1d";
+          rect(x-range,y-155,range*2,ground-y+155,field,15);
+          rect(x-range,y-155,2,ground-y+155,enemy.active?"#e29cf9":"#b174c6");
+          rect(x+range-2,y-155,2,ground-y+155,enemy.active?"#e29cf9":"#b174c6");
+          for(let i=0;i<4;i++) rect(x-range+5,y-146+wrap(t*75+i*67,ground-y+140),range*2-10,1,"#f5baff56");
+        }
+        path([[x-19,ground],[x-7,y+15],[x+7,y+15],[x+19,ground]],"#55406c");
+        outline(x,y,17,"#bb85dc",2);
+        oval(x,y,10,10,enemy.active?"#f8c9fa":"#a567c2");
+      } else {
+        if(enemy.aim) {
+          ctx.strokeStyle="#ffc177b3";
+          ctx.lineWidth=2;
+          ctx.setLineDash([8,8]);
+          ctx.beginPath();
+          ctx.moveTo(x,y);
+          ctx.lineTo(enemy.aim.x-camera,enemy.aim.y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        rect(x-18,y+13,36,ground-y-13,"#5d4357",4);
+        oval(x,y,19,16,"#946457");
+        oval(x,y,8,8,enemy.aim?"#fff2ad":"#d99170");
+      }
+    }
+    for(const shot of hazards) {
+      const x=shot.x-camera;
+      oval(x,shot.y,10,10,"#fb9b6950");
+      oval(x,shot.y,5,5,"#ffd78a");
+    }
+  }
+
+  function damageCourse(message) {
+    if(invulnerable) return;
+    hull--; invulnerable=1.25;
+    burst(ship.x,ship.y,"#f6a1bf"); beep(160,.23,"triangle",55); updateHud();
+    if(hull) announce(message,1.5);
+    else destroy("ship",ship.x,ship.y,.95,()=>
+      screen("lost","SCHILD ERSCHÖPFT","Bruchlandung",saved+" von "+animals.length+" Tieren sind an Bord.","Parcours wiederholen"));
+  }
+
+  function updatePatrols(dt) {
+    let inField=false;
+    for(const enemy of patrols) {
+      const offset=courseTime+enemy.offset;
+      if(enemy.kind==="drone") {
+        const speed=1.1+level*.12;
+        enemy.x=enemy.baseX+Math.sin(offset*speed)*enemy.range;
+        enemy.y=enemy.baseY+Math.cos(offset*speed*1.7)*24;
+        if(Math.abs(enemy.x-ship.x)<46&&Math.abs(enemy.y-ship.y)<27) damageCourse("Patrouillendrohne hat deinen Schild getroffen.");
+      } else if(enemy.kind==="jammer") {
+        const cycle=offset%4.8;
+        enemy.warning=cycle>=2.75&&cycle<3.35;
+        enemy.active=cycle>=3.35;
+        if(enemy.active&&Math.abs(enemy.x-ship.x)<enemy.range&&ship.y>enemy.y-155) inField=true;
+      } else if(enemy.aim) {
+        enemy.aim.remaining-=dt;
+        if(enemy.aim.remaining<=0) {
+          const angle=Math.atan2(enemy.aim.y-enemy.y,enemy.aim.x-enemy.x);
+          const speed=335+level*16;
+          hazards.push({x:enemy.x,y:enemy.y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,life:1.9});
+          enemy.aim=null;
+          enemy.cooldown=level===5?1.95:2.35;
+          if(Math.abs(enemy.x-ship.x)<500) beep(260,.14,"triangle",128);
+        }
+      } else {
+        enemy.cooldown-=dt;
+        if(enemy.cooldown<=0&&Math.hypot(enemy.x-ship.x,enemy.y-ship.y)<enemy.range)
+          enemy.aim={x:ship.x,y:ship.y,remaining:.78};
+      }
+      if(state==="ending") return;
+    }
+    jammed=beam&&inField;
+    if(jammed) beam=false;
+    hazards=hazards.filter(shot=>{
+      shot.x+=shot.vx*dt; shot.y+=shot.vy*dt; shot.life-=dt;
+      if(shot.life<=0||shot.y<60||shot.y>ground) return false;
+      if(solids.some(([x,y,w,h])=>shot.x>=x&&shot.x<=x+w&&shot.y>=y&&shot.y<=y+h)) return false;
+      if(Math.abs(shot.x-ship.x)<28&&Math.abs(shot.y-ship.y)<18) {
+        damageCourse("Geschützturm hat deinen Schild getroffen.");
+        return false;
+      }
+      return true;
+    });
   }
 
   function destroy(target,x,y,duration,finish) {
-    state="ending"; beam=false;
+    state="ending"; beam=false; jammed=false;
     hideTouch();
     announce("");
     destruction={target,remaining:duration,finish};
@@ -488,7 +658,7 @@
     get("course").textContent=boss ? "Boss "+(bossIndex+1) : String(level+1).padStart(2,"0")+" / "+String(courses.length).padStart(2,"0")+" · "+course.name;
     get("count").parentElement.hidden=!!boss;
     get("count").textContent=saved+" / "+animals.length;
-    get("shield").textContent="◆".repeat(hull)+"◇".repeat((boss?5:3)-hull);
+    get("shield").textContent="◆".repeat(hull)+"◇".repeat(maxHull-hull);
     if(boss) {
       get("boss-name").textContent=bosses[bossIndex].name+" · Phase "+boss.phase;
       get("boss-health").max=bosses[bossIndex].hp;
@@ -504,11 +674,16 @@
     level=index; course=courses[index];
     animals=course.animals.map(([x,kind])=>({x,kind,lift:0,saved:false}));
     ship={x:90,y:315,vx:0,vy:0};
-    saved=0; hull=3; camera=0; invulnerable=0; particles=[]; beam=false;
+    saved=0; hull=maxHull=3+Math.floor(index/2); camera=0; invulnerable=0; particles=[]; beam=false;
     effects=[]; destruction=null;
+    patrols=course.enemies.map(([kind,x,y,range],position)=>({
+      kind,x,y,range,baseX:x,baseY:y,offset:position*.73,cooldown:.5
+    }));
+    solids=course.towers.map(([x,w,h])=>[x,ground-h,w,h]).concat(course.gates||[]);
+    hazards=[]; courseTime=0; jammed=false;
     enterPlay();
     updateHud();
-    announce("Fang alle Tiere und flieg zum Ausgang.",3.5);
+    announce(course.hint||"Fang alle Tiere und flieg zum Ausgang.",4.5);
     beep(240,.28,"triangle",520);
   }
   function screen(next,kicker,title,brief,button) {
@@ -531,9 +706,7 @@
     enableAudio();
     if(state==="pause") {
       enterPlay();
-    } else if(state==="next") start(level+1);
-    else if(state==="first-boss") startBoss(0);
-    else if(state==="second-boss") startBoss(1);
+    } else if(state==="next") launch(currentMission()+1);
     else if(state==="lost") boss ? startBoss(bossIndex) : start(level);
     else if(state==="title"||state==="win") start(0);
     else if(state==="select") launch(selection);
@@ -547,13 +720,31 @@
   function launch(index) {
     enableAudio();
     document.activeElement?.blur();
-    if(index<courses.length) start(index);
-    else startBoss(index-courses.length);
+    const mission=missions[index];
+    if(mission.kind==="course") start(mission.index);
+    else startBoss(mission.index);
+  }
+  function currentMission() {
+    return missions.findIndex(mission=>boss
+      ? mission.kind==="boss"&&mission.index===bossIndex
+      : mission.kind==="course"&&mission.index===level);
+  }
+  function completeMission() {
+    const next=missions[currentMission()+1];
+    if(!next) {
+      screen("win","MISSION ERFÜLLT","Heimflug frei!","Vexa ist besiegt. Dein UFO kann nach Hause fliegen.","Neue Mission");
+    } else if(next.kind==="boss") {
+      screen("next","FEINDKONTAKT","Alle gerettet!",saved+" Tiere sind an Bord. Vor dir wartet "+next.data.name+".","Zum Bosskampf");
+    } else if(boss) {
+      screen("next","BOSS BESIEGT","Weg frei!","Dein nächster Einsatz führt dich nach "+next.data.name+".","Nächster Parcours");
+    } else {
+      screen("next","PARCOURS GESCHAFFT","Alle gerettet!",saved+" Tiere sind sicher an Bord. Nächster Halt: "+next.data.name+".","Nächster Parcours");
+    }
   }
   function menu() {
     if(state==="play"||state==="ending"||state==="select") return;
     selectFrom=state; state="select";
-    selection=selectFrom==="title"?0:boss?courses.length+bossIndex:level;
+    selection=selectFrom==="title"?0:currentMission();
     get("panel").hidden=true; get("select").hidden=false;
     get("home").hidden=selectFrom==="title";
     get("home").textContent=padId?"Y · Hauptmenü":"Hauptmenü";
@@ -572,7 +763,7 @@
     get("select").hidden=true;
     const headline=document.createElement("em");
     headline.textContent="Catcher";
-    screen("title","EINSATZ 01 / 05","Alien Animal","Rette die Tiere in fünf Nachtparcours und stell dich zwei Bossen auf dem Heimweg.","Einsatz starten");
+    screen("title","EINSATZ 01 / 06","Alien Animal","Rette Tiere in sechs Nachtparcours und stell dich drei Bossen.","Einsatz starten");
     get("title").append(document.createElement("br"),headline);
     get("action").focus();
   }
@@ -602,7 +793,7 @@
     const b=!!pad?.buttons[1]?.pressed, y=!!pad?.buttons[3]?.pressed;
     const view=!!pad?.buttons[8]?.pressed;
     const xAxis=pad?.axes[0]||0, yAxis=pad?.axes[1]||0;
-    const direction=pad?.buttons[12]?.pressed||yAxis<-.6?-2:pad?.buttons[13]?.pressed||yAxis>.6?2:
+    const direction=pad?.buttons[12]?.pressed||yAxis<-.6?-3:pad?.buttons[13]?.pressed||yAxis>.6?3:
       pad?.buttons[14]?.pressed||xAxis<-.6?-1:pad?.buttons[15]?.pressed||xAxis>.6?1:0;
     if(state==="select"&&direction&&direction!==padDirection) moveSelection(direction);
     if(a&&!padA&&state!=="play") action();
@@ -657,20 +848,14 @@
     ship.y=clamp(ship.y+ship.vy*dt,101,ground-31);
     invulnerable=Math.max(0,invulnerable-dt);
     const overlap=([x,y,w,h])=>ship.x+29>x&&ship.x-29<x+w&&ship.y+13>y&&ship.y-22<y+h;
-    const hitsTower=course.towers.some(([x,w,h])=>overlap([x,ground-h,w,h]));
-    if(hitsTower||(course.gates||[]).some(overlap)) {
+    if(solids.some(overlap)) {
       ship.x=oldX; ship.y=oldY; ship.vx=0; ship.vy=0;
-      if(!invulnerable) {
-        hull--; invulnerable=1.25;
-        burst(ship.x,ship.y,"#f6a1bf"); beep(160,.23,"triangle",55); updateHud();
-        if(!hull) {
-          destroy("ship",ship.x,ship.y,.95,()=>
-            screen("lost","SCHILD ERSCHÖPFT","Bruchlandung",saved+" von "+animals.length+" Tieren sind an Bord.","Parcours wiederholen"));
-          return;
-        }
-        announce("Kollision! Schild beschädigt.",1.4);
-      }
+      damageCourse("Kollision! Schild beschädigt.");
+      if(state==="ending") return;
     }
+    courseTime+=dt;
+    updatePatrols(dt);
+    if(state==="ending") return;
     camera+= (clamp(ship.x-W*.4,0,course.width-W)-camera)*Math.min(1,dt*5);
     for(const a of animals) {
       if(a.saved) continue;
@@ -692,8 +877,7 @@
         if(noticeTime<=0) announce("Es fehlen noch "+(animals.length-saved)+" Tiere.");
       } else if(ship.y>345) {
         beep(400,.5,"sine",1100);
-        if(level===courses.length-1) screen("first-boss","SIGNAL EMPFANGEN","Feindkontakt","Der Sternenjäger blockiert den Heimweg. Schieß mit F oder X am Xbox-Controller.","Zum Sternenjäger");
-        else screen("next","PARCOURS GESCHAFFT","Alle gerettet!",saved+" Tiere sind sicher an Bord. Nächster Halt: "+courses[level+1].name+".","Nächster Parcours");
+        completeMission();
       } else if(noticeTime<=0) announce("Zum Ausgang sinken ↓");
     }
     for(const p of particles) {p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=70*dt; p.life-=dt;}
@@ -731,7 +915,7 @@
     }
     if(!controls.has(event.code)||event.altKey||event.ctrlKey||event.metaKey) return;
     if(state==="select") {
-      const direction={ArrowLeft:-1,ArrowRight:1,ArrowUp:-2,ArrowDown:2}[event.code];
+      const direction={ArrowLeft:-1,ArrowRight:1,ArrowUp:-3,ArrowDown:3}[event.code];
       if(direction) {event.preventDefault(); moveSelection(direction);}
       if(event.code==="Escape") {event.preventDefault(); back();}
       return;
