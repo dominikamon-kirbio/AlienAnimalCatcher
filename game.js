@@ -41,6 +41,11 @@
   let effects = [], destruction = null;
   let selection = 0, selectFrom = "title", padB = false, padY = false, padDirection = 0;
   let padView = false;
+  let nativePad = null;
+  const touch = {x:0,y:0,action:false};
+  const stick = get("touch-stick"), touchAction = get("touch-action");
+  const android = navigator.userAgent.includes(" AlienAnimalCatcherAndroid");
+  if(android) document.body.classList.add("android-app");
   const missions = [...courses, ...bosses];
   const levelButtons = missions.map((mission, index) => {
     const button = document.createElement("button");
@@ -413,6 +418,7 @@
 
   function destroy(target,x,y,duration,finish) {
     state="ending"; beam=false;
+    hideTouch();
     announce("");
     destruction={target,remaining:duration,finish};
     effects.push({kind:"explosion",x,y,age:0,duration,scale:target==="boss"?1.65:1});
@@ -513,6 +519,7 @@
     get("action-label").textContent=button;
     get("panel").hidden=false;
     hud.hidden=true; get("boss-hud").hidden=true;
+    hideTouch();
     get("menu").textContent=padId?"Y · Levelauswahl":"Levelauswahl";
     announce("");
   }
@@ -534,6 +541,8 @@
   function enterPlay() {
     state="play"; get("panel").hidden=true; get("select").hidden=true;
     hud.hidden=false; get("boss-hud").hidden=!boss;
+    get("touch-controls").hidden=false;
+    touchAction.textContent=boss?"Schießen":"Beamen";
   }
   function launch(index) {
     enableAudio();
@@ -576,7 +585,7 @@
   function beamWidth() {return 23+(ground-ship.y)*.115;}
   function pollPad() {
     let pad;
-    try {pad=Array.from(navigator.getGamepads?.()||[]).find(p=>p?.connected&&p.mapping==="standard");} catch {}
+    try {pad=nativePad||Array.from(navigator.getGamepads?.()||[]).find(p=>p?.connected&&p.mapping==="standard");} catch {}
     if((pad?.id??null)!==padId) {
       padId=pad?.id??null;
       const status=get("controller");
@@ -632,15 +641,15 @@
     const down=(...codes)=>codes.some(code=>keys.has(code));
     const button=index=>+!!pad?.buttons[index]?.pressed;
     const axis=index=>Math.abs(pad?.axes[index]||0)>.19?pad.axes[index]:0;
-    let dx=clamp(axis(0)+button(15)-button(14)+down("ArrowRight","KeyD")-down("ArrowLeft","KeyA"),-1,1);
-    let dy=clamp(axis(1)+button(13)-button(12)+down("ArrowDown","KeyS")-down("ArrowUp","KeyW"),-1,1);
+    let dx=clamp(touch.x+axis(0)+button(15)-button(14)+down("ArrowRight","KeyD")-down("ArrowLeft","KeyA"),-1,1);
+    let dy=clamp(touch.y+axis(1)+button(13)-button(12)+down("ArrowDown","KeyS")-down("ArrowUp","KeyW"),-1,1);
     const magnitude=Math.max(1,Math.hypot(dx,dy));
     dx/=magnitude; dy/=magnitude;
     if(boss) {
-      updateBoss(dt,dx,dy,down("KeyF")||button(2)||button(5));
+      updateBoss(dt,dx,dy,touch.action||down("KeyF")||button(2)||button(5));
       return;
     }
-    beam=down("Space")||padA||button(7)>0||(pad?.buttons[7]?.value??0)>.3;
+    beam=touch.action||down("Space")||padA||button(7)>0||(pad?.buttons[7]?.value??0)>.3;
     ship.vx+=(dx*305-ship.vx)*Math.min(1,dt*8);
     ship.vy+=(dy*280-ship.vy)*Math.min(1,dt*8);
     const oldX=ship.x, oldY=ship.y;
@@ -751,5 +760,66 @@
     get("sound").blur();
     if(!mute) {enableAudio(); beep(440,.16);}
   });
+  let stickPointer = null, actionPointer = null;
+  function centerStick() {
+    stickPointer=null;
+    touch.x=touch.y=0;
+    stick.style.setProperty("--stick-x","0px");
+    stick.style.setProperty("--stick-y","0px");
+  }
+  function releaseAction() {
+    actionPointer=null;
+    touch.action=false;
+    touchAction.setAttribute("aria-pressed","false");
+  }
+  function hideTouch() {
+    centerStick(); releaseAction();
+    get("touch-controls").hidden=true;
+  }
+  function moveStick(event) {
+    if(event.pointerId!==stickPointer) return;
+    const bounds=stick.getBoundingClientRect(), radius=bounds.width*.32;
+    const x=event.clientX-bounds.left-bounds.width/2, y=event.clientY-bounds.top-bounds.height/2;
+    const divisor=Math.max(Math.hypot(x,y),radius,1);
+    touch.x=x/divisor; touch.y=y/divisor;
+    stick.style.setProperty("--stick-x",touch.x*radius+"px");
+    stick.style.setProperty("--stick-y",touch.y*radius+"px");
+  }
+  stick.addEventListener("pointerdown",event=>{
+    if(stickPointer!==null) return;
+    stickPointer=event.pointerId;
+    stick.setPointerCapture(stickPointer);
+    moveStick(event);
+  });
+  stick.addEventListener("pointermove",moveStick);
+  touchAction.addEventListener("pointerdown",event=>{
+    if(actionPointer!==null) return;
+    actionPointer=event.pointerId;
+    touchAction.setPointerCapture(actionPointer);
+    touch.action=true;
+    touchAction.setAttribute("aria-pressed","true");
+    enableAudio();
+  });
+  for(const type of ["pointerup","pointercancel","lostpointercapture"]) {
+    stick.addEventListener(type,event=>{if(event.pointerId===stickPointer) centerStick();});
+    touchAction.addEventListener(type,event=>{if(event.pointerId===actionPointer) releaseAction();});
+  }
+  get("touch-pause").addEventListener("click",togglePause);
+  if(android) window.alienAndroid={
+    controller(x,y,buttons,trigger) {
+      nativePad={id:"Android Gamepad",axes:[x,y],buttons:Array.from({length:17},(_,index)=>({
+        pressed:(buttons&(1<<index))!==0,value:index===7?trigger:0
+      }))};
+    },
+    disconnect(){nativePad=null;},
+    suspend(){nativePad=null; if(state==="play") togglePause();},
+    back(){
+      if(state==="title") return false;
+      if(state==="select") back();
+      else if(state==="play") togglePause();
+      else if(state!=="ending") home();
+      return true;
+    }
+  };
   requestAnimationFrame(frame);
 })();
