@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="de">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AlienAnimalCatcher</title>
+<link rel="stylesheet" href="style.css">
+<main>
+  <header><div class="brand"><span>✦</span> AlienAnimalCatcher</div><div id="controller" class="status"><i></i> Tastatur bereit</div></header>
+  <section class="stage" aria-label="AlienAnimalCatcher Spielfeld">
+    <canvas id="game" width="1200" height="600" aria-label="UFO fliegen und Tiere einsammeln"></canvas>
+    <div class="hud" hidden>
+      <div><small>PARCOURS</small><b id="course"></b></div>
+      <div><small>GERETTET</small><b id="count"></b></div>
+      <div><small>SCHILD</small><b id="shield"></b></div>
+    </div>
+    <div class="panel" id="panel">
+      <div class="eyebrow"><span></span><span id="kicker">EINSATZ 01 / 05</span></div>
+      <h1 id="title">Alien Animal<br><em>Catcher</em></h1>
+      <p id="brief">Rette die Tiere in fünf Nachtparcours und stell dich zwei Bossen auf dem Heimweg.</p>
+      <button id="action"><span class="prompt" id="prompt">↵</span><span id="action-label">Einsatz starten</span></button>
+      <button id="menu" class="secondary">Levelauswahl</button>
+    </div>
+    <div id="select" class="panel" hidden>
+      <div class="eyebrow"><span></span>MISSIONEN</div>
+      <h2>Levelauswahl</h2>
+      <div id="levels" class="levels"></div>
+      <div class="menu-actions"><button id="back" class="secondary">Zurück</button><button id="home" class="secondary" hidden>Hauptmenü</button></div>
+    </div>
+    <div id="boss-hud" hidden><b id="boss-name"></b><progress id="boss-health" max="1" value="1"></progress></div>
+    <div id="notice" role="status"></div>
+  </section>
+  <footer><div><kbd id="fly-key">WASD / ↑↓←→</kbd> Fliegen</div><div><kbd id="beam-key">Leertaste</kbd> Beamen</div><div><kbd id="shot-key">F</kbd> Schießen</div><div><kbd id="pause-key">Esc</kbd> Pause</div><button id="sound" aria-pressed="true">Ton an</button><button id="fullscreen" aria-pressed="false">Vollbild · V</button></footer>
+</main>
+<script src="game.js"></script>
+</html>
